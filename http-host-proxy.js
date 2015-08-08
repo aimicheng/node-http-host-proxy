@@ -174,6 +174,10 @@ function loadroutes(shouldthrow) {
   Object.keys(routes).forEach(function(key) {
     var val = routes[key];
     if (typeof val === 'string') {
+        if (val === "*") {
+            proxies[key] = httpProxy.createProxyServer({});
+            return;
+        }
       var s = val.split(':');
       var host = s[0];
       var port = s[1];
@@ -268,11 +272,15 @@ function onrequest(req, res) {
   var host = req.headers.host;
   d('host header `%s`', host);
   var implicit = false;
-  var p = hasOwnProperty.call(proxies, host) && proxies[host];
+  var p = hasOwnProperty.call(proxies, host) && proxies[host], proxy_opt = {};
   if (!p) {
     d('no explicit route found for %s', host);
     implicit = true;
     p = proxies['*'];
+    p.web(req, res, {
+        target: 'http://' + host + ":" + 80
+    });
+    return;
   }
   var credentials = getcredentials(req);
 
@@ -318,6 +326,7 @@ function onrequest(req, res) {
     req.headers['X-Forwarded-User'] = credentials.user;
 
   d('proxying request to %s:%d', p.options.target.host, p.options.target.port);
+
   p.web(req, res, function(e) {
     d('proxy failed! %s', e.message);
     res.statusCode = 500;
