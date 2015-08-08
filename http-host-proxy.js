@@ -278,7 +278,7 @@ function onrequest(req, res) {
     implicit = true;
     p = proxies['*'];
     p.web(req, res, {
-        target: 'http://' + host + ":" + 80
+        target: 'http://' + host
     });
     return;
   }
